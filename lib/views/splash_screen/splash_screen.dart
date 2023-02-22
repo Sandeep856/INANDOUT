@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:food/consts/colors.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:food/consts/consts.dart';
+import 'package:food/services/auth.dart';
+import 'package:food/views/Landing_page.dart';
 import 'package:food/widgets_common/applogo_widgets.dart';
-import 'package:food/views/auth_screen/login_screen.dart';
 import 'package:get/get.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -13,9 +13,10 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  final Future<FirebaseApp> _initialization = Firebase.initializeApp();
   changeScreen() {
     Future.delayed(const Duration(seconds: 3), () {
-      Get.to(() => const LoginScreen());
+      Get.to(() => LandingPage(auth: Auth(),));
     });
   }
 

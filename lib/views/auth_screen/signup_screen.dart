@@ -1,6 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
-
+import 'package:flutter/material.dart';
 import '../../consts/consts.dart';
 import '../../consts/lists.dart';
 import '../../widgets_common/applogo_widgets.dart';
@@ -17,6 +18,77 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   bool? isCheck = false;
+ bool _registerFormLoading = false;
+
+  void _submit() async {
+    String? _createAccountFeedback = await createAccount();
+    setState(() {
+      _registerFormLoading = true;
+    });
+    if (_createAccountFeedback != null) {
+      _alertDialogBuilder(_createAccountFeedback);
+
+      setState(() {
+        _registerFormLoading = false;
+      });
+    } else {
+      Navigator.pop(context);
+    }
+  }
+  Future<String?> createAccount() async {
+    try {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: _registerEmail, password: _registerPassword);
+      return null;
+    } on FirebaseException catch (e) {
+      if (e.code == 'weak-password') {
+        return 'The password provided is too weak.';
+      } else if (e.code == 'email-already-in-use') {
+        return 'The account already exists for that email.';
+      }
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+  Future<void> _alertDialogBuilder(String error) async {
+    return showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Error'),
+            content: Container(
+              child: Text(error),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text('Close Dialog Box'),
+              ),
+            ],
+          );
+        });
+  }
+  String _name="";
+  String _registerEmail = '';
+  String _registerPassword = '';
+
+   late FocusNode _passwordFocusNode;
+  @override
+  void initState() {
+    _passwordFocusNode = FocusNode();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _passwordFocusNode.dispose();
+    super.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -33,10 +105,47 @@ class _SignupScreenState extends State<SignupScreen> {
           15.heightBox,
           Column(
             children: [
-              customTextField(hint: nameHint, title: name),
-              customTextField(hint: emailHint, title: email),
-              customTextField(hint: passwordHint, title: password),
-              customTextField(hint: passwordHint, title: retypePassword),
+              customTextField(hint: nameHint, title: name,
+              onChanged:(value){
+                _name=value;
+              },
+              onSubmitted: (value) {
+                      _passwordFocusNode.requestFocus();
+                    },
+              textInputAction: TextInputAction.next,
+              isPasswordField: false,),
+
+
+              customTextField(hint: emailHint, title: email,
+               onChanged: (value) {
+                      _registerEmail = value;
+                    },
+              onSubmitted: (value) {
+                      _passwordFocusNode.requestFocus();
+                    },
+              textInputAction: TextInputAction.next,
+              isPasswordField: false,),
+
+
+              customTextField(hint: passwordHint, 
+              title: password,
+              onChanged: (value) {
+                      _registerPassword = value;
+                    },
+              onSubmitted: (value) {
+                      _submit();
+                    },
+                textInputAction: TextInputAction.next,
+              isPasswordField: true,),
+
+
+              // customTextField(hint: passwordHint, 
+              // title: retypePassword,onChanged:(value){},
+              // onSubmitted: (value){},
+              // textInputAction: TextInputAction.done,
+              // isPasswordField: true,),
+
+
               Align(
                 alignment: Alignment.centerRight,
                 child:
@@ -89,7 +198,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       color: isCheck == true ? redColor : lightGrey,
                       title: signup,
                       textColor: whiteColor,
-                      onPress: () {})
+                      onPress: () {
+                        _submit();
+                      })
                   .box
                   .width(context.screenWidth - 50)
                   .make(),
